@@ -13,6 +13,7 @@
   "author": "tyler liu",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.13.3",
     "express": "^4.13.4"
   }
 }
