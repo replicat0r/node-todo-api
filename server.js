@@ -128,30 +128,17 @@ app.put('/todos/:id', function(req, res) {
 })
 app.post('/users/login', function(req, res) {
     var body = _.pick(req.body, 'email', 'password')
-    
-    
-    if ((typeof body.email !== 'string') && (typeof body.password !== 'string')) {
-        return res.status(400).send();
-    }
-    db.user.findOne({
-        where: {
-            email: body.email
-        }
-    }).then(function(user) {
-        if(!user || !bcrypt.compareSync(body.password,user.get('password_hash'))){
-            return res.status(401).send();
-        }
-       
-        res.json(user.toPublicJSON())
 
+    db.user.authenticate(body).then(function(user) {
+        res.json(user.toPublicJSON())
     }, function(err) {
-        res.status(500).send();
+        res.status(401).send();
     })
 
 
 })
 
-db.sequelize.sync().then(function() {
+db.sequelize.sync({force:true}).then(function() {
     app.listen(PORT, function() {
         console.log(`listening on port ${PORT}`)
     })
