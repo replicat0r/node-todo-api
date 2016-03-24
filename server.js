@@ -67,7 +67,7 @@ app.post('/todos', function(req, res) {
 app.post('/users',function(req,res){
     var user = _.pick(req.body,'email','password')
     db.user.create(user).then(function(user){
-        res.json(user)
+        res.json(user.toPublicJSON())
     },function(e){
         res.status(400).json(e)
     })
@@ -126,7 +126,7 @@ app.put('/todos/:id', function(req, res) {
 
 })
 
-db.sequelize.sync().then(function() {
+db.sequelize.sync({force:true}).then(function() {
     app.listen(PORT, function() {
         console.log(`listening on port ${PORT}`)
     })
