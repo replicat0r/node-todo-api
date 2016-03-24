@@ -130,7 +130,7 @@ app.post('/users/login', function(req, res) {
     var body = _.pick(req.body, 'email', 'password')
 
     db.user.authenticate(body).then(function(user) {
-        res.json(user.toPublicJSON())
+        res.header('Auth', user.generateToken('authentication')).json(user.toPublicJSON())
     }, function(err) {
         res.status(401).send();
     })
@@ -138,7 +138,7 @@ app.post('/users/login', function(req, res) {
 
 })
 
-db.sequelize.sync({force:true}).then(function() {
+db.sequelize.sync().then(function() {
     app.listen(PORT, function() {
         console.log(`listening on port ${PORT}`)
     })
