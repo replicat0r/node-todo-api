@@ -51,12 +51,12 @@ module.exports = function(sequelize, DataTypes) {
                     }
                     try {
                         var stringData = JSON.stringify({ id: this.get('id'), type: type })
-                        
+
                         var encrypteData = cryptojs.AES.encrypt(stringData, 'abc1234').toString();
                         var token = jwt.sign({
                             token: encrypteData
                         }, 'qwerty098')
-                        
+
                         debugger;
                         return token;
 
@@ -87,6 +87,31 @@ module.exports = function(sequelize, DataTypes) {
                             return reject();
                         })
                     })
+                },
+                findByToken: function(token) {
+                    return new Promise(function(resolve, reject) {
+                        try {
+                            var decodedJWT = jwt.verify(token, 'qwerty098');
+                            var bytes = cryptojs.AES.decrypt(decodedJWT.token, 'abc1234')
+                            //bytes outputs value in hex because it doesnt know what encoding is used from the original value,
+                            //toString() is a custom method on the cryptoJs that can accept char encoding to decrypt the string
+                            var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
+                            user.findById(tokenData.id).then(function(user) {
+                                if (user) {
+                                    resolve(user)
+                                } else {
+                                    reject();
+                                }
+                            }, function(e) {
+                                reject();
+
+                            })
+
+                        } catch (e) {
+                            reject();
+
+                        }
+                    });
                 }
             }
         })
