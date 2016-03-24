@@ -1,6 +1,9 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
+var db = require('./db')
+
+
 var app = express();
 var PORT = process.env.PORT || 3000;
 var todos = []
@@ -25,9 +28,6 @@ app.get('/todos', function(req, res) {
         })
 
     }
-
-
-
     res.json(filteredTodos)
 })
 
@@ -46,17 +46,11 @@ app.get('/todos/:id', function(req, res) {
 app.post('/todos', function(req, res) {
     var body = _.pick(req.body, 'description', 'completed')
 
-    if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length == 0) {
-        return res.status(400).send();
-    }
-    //add id field
-    //push body into array
-
-    body.description = body.description.trim();
-    body.id = todoNextId++;
-    todos.push(body)
-    res.json(body)
-
+    db.todo.create(body).then(function(todo) {
+        res.json(todo.toJSON())
+    }, function(e) {
+        res.status(400).json(e)
+    })
 })
 
 app.delete('/todos/:id', function(req, res) {
@@ -100,6 +94,9 @@ app.put('/todos/:id', function(req, res) {
 
 })
 
-app.listen(PORT, function() {
-    console.log(`listening on port ${PORT}`)
-})
+db.sequelize.sync().then(function() {
+    app.listen(PORT, function() {
+        console.log(`listening on port ${PORT}`)
+    })
+});
+
