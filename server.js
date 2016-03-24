@@ -15,32 +15,43 @@ app.get('/', function(req, res) {
 
 app.get('/todos', function(req, res) {
     var queryParams = req.query;
-    var filteredTodos = todos;
-    if (queryParams.hasProperty('completed') && (queryParams.completed === "true")) {
-        filteredTodos = _.where(filteredTodos, { completed: true })
-    } else if (queryParams.hasProperty('completed') && (queryParams.completed === "false")) {
-        filteredTodos = _.where(filteredTodos, { completed: false })
-
+    var where = {};
+    if (queryParams.hasOwnProperty('completed') && (queryParams.completed === "true")) {
+        where.completed = true
+    } else if (queryParams.hasOwnProperty('completed') && (queryParams.completed === "false")) {
+        where.completed = false
     }
     if (queryParams.hasOwnProperty('q') && (queryParams.q.length > 0)) {
-        filteredTodos = _.filter(todos, function(todo) {
-            return (todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1)
-        })
-
+        where.description = {
+            $like: `%${queryParams.q}%`
+        }
     }
-    res.json(filteredTodos)
+    res
+
+    db.todo.findAll({
+        where: where
+    }).then(function(todos) {
+        res.json(todos)
+
+    }, function(e) {
+        res.status(500).send(e)
+    })
+        
 })
 
 app.get('/todos/:id', function(req, res) {
     var todoId = parseInt(req.params.id, 10)
-    var matchedTodo = _.findWhere(todos, { id: todoId })
 
-    if (matchedTodo) {
-        res.json(matchedTodo)
+    db.todo.findById(todoId).then(function(todo) {
+        if (!!todo) {
+            res.json(todo)
+        } else {
+            res.status(404).send();
+        }
+    }, function(err) {
+        res.status(500).json(err)
+    })
 
-    } else {
-        res.status(404).send();
-    }
 })
 
 app.post('/todos', function(req, res) {
@@ -89,7 +100,6 @@ app.put('/todos/:id', function(req, res) {
 
     _.extend(matchedTodo, validAttributes)
     res.json(matchedTodo)
-
 
 
 })
