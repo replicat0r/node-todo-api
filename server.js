@@ -143,17 +143,35 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 })
 app.post('/users/login', function(req, res) {
     var body = _.pick(req.body, 'email', 'password')
+    var userInstance;
 
     db.user.authenticate(body).then(function(user) {
-        res.header('Auth', user.generateToken('authentication')).json(user.toPublicJSON())
-    }, function(err) {
+        var token = user.generateToken('authentication');
+        userInstance = user
+        return db.token.create({
+            token: token
+        });
+
+    }).then(function(tokenInstance) {
+        res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON())
+
+    }).catch(function() {
         res.status(401).send();
     })
 
 
 })
 
-db.sequelize.sync({ force: true }).then(function() {
+app.delete('/users/login',middleware.requireAuthentication,function(req,res){
+    console.log('inside delete route ' + req.token)
+    req.token.destroy().then(function(){
+        res.status(204).send();
+    }).catch(function(){
+        res.status(500).send();
+    })
+});
+
+db.sequelize.sync().then(function() {
     app.listen(PORT, function() {
         console.log(`listening on port ${PORT}`)
     })
